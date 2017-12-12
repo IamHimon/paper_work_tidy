@@ -1,0 +1,21 @@
+label_dict = {'Title': 0, 'Author': 1, 'Journal': 2, 'Year': 3, 'Volume': 4, 'Pages': 5}
+record: 'Li Shoushan, Huang Chu-Ren, Zhou Guodong and Lee Y. M. Sophia,Employing personal/impersonal views in supervised and semi-supervised sentiment classification,ACL,2010,1108-1117, 64(2)'
+(1)filter noise punctuation mark,such as ',' , '.' in the head or end of the
+(2)delimit the record into tokens block according KB,
+ ['li', 'shoushan', 'huang', 'chu-ren', 'zhou', 'guodong', 'and lee', 'y. m.', 'sophia', 'employing', 'personal/impersonal', 'views in', 'supervised and', 'semi-supervised', 'sentiment', 'classification', 'acl', '2010', '1108-1117', '64(2)']
+for all token in the record,we compose blocks with neighbor tokens that are co-occur in some attribute value in the Knowledge Base,
+token that not found in KB form a block alone according to the rule.
+the blocking algorithms here is similar with [OUDUX].
+(3) roughly label the tokens block
+we figure out every block's frequency that occur in every attribute,
+
+nornalime_vf_list: [{'Year': 0.0, 'Author': 0.99808, 'Title': 0.00192, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 1.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 1.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 1.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 1.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 1.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 1.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 1.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 1.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 1.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 1.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 1.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.85698, 'Pages': 0.0, 'Journal': 0.14302, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.98844, 'Author': 0.0, 'Title': 0.01156, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 0.0}, {'Year': 0.0, 'Author': 0.0, 'Title': 0.0, 'Pages': 0.0, 'Journal': 0.0, 'Volume': 1.0}]
+we define a threshold ,then we label the block when the corresponding attribute's frequency is larger than the threshold,
+tokens that not find in the KB is labeled as 'Unknown'.
+['Author', 'Unknown', 'Author', 'Unknown', 'Author', 'Author', 'Author', 'Author', 'Author', 'Title', 'Unknown', 'Title', 'Title', 'Title', 'Title', 'Title', 'Unknown', 'Year', 'Unknown', 'Volume']
+there is a one-to-one correspondence between the token sequence and the label sequence.
+(4)reconstruct block sequence and label sequence
+相同label之间的块被合并为一块,并打上这个标签
+blocks between two same labels in the label sequence were merge into one block,
+['Author', 'Title', 'Unknown', 'Year', 'Unknown', 'Volume']
+

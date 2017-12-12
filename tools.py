@@ -2,6 +2,7 @@ import re
 import nltk
 import pickle
 import numpy as np
+LABEL_DICT = {'Title': 0, 'Author': 1, 'Journal': 2, 'Year': 3, 'Volume': 4, 'Pages': 5}
 USED_CAR_DICT = {'Brand': 0, 'Price': 1, 'Vehicle': 2, 'Odometer': 3, 'Color': 4, 'Transmission': 5, 'Body': 6, 'Engine': 7, 'Fuel_enconomy': 8}
 label = ['Vehicle', 'Price', 'Odometer', 'Colour', 'Transmission', 'Body', 'Engine', 'Fuel Enconomy']
 
@@ -14,6 +15,7 @@ def remove_black_space(a):
     return c
 
 
+# 输入处理trick, 讲数字成分用空格分离开, '2015 Audi'-> '2 0 1 5 Audi'
 def sample_pretreatment_disperse_number2(sample):
     add_length = 0
     for m in re.finditer(r'\d+', sample):
@@ -27,6 +29,7 @@ def sample_pretreatment_disperse_number2(sample):
     return sample
 
 
+# 用空格链接一段字符, 比如: '2015' -> ' 2 0 1 5 '
 def replace_by_position(str, start, end):
     seg_str = str[start:end]
     temp = ' ' + ' '.join([c for c in seg_str]) + ' '
@@ -34,6 +37,7 @@ def replace_by_position(str, start, end):
     return str
 
 
+# 构造Pos特征
 def makePosFeatures(sent_contents):
     """
     :param sent_contents:
@@ -126,7 +130,6 @@ def makeWordList(sent_list):
                 wf[w] += 1
             else:
                 wf[w] = 0
-
     wl = {}
     i = 0
     wl['unkown'] = 0
@@ -141,3 +144,4 @@ def makeWordList(sent_list):
 def save_dict(word_dict, name):
     with open(name, 'wb') as handle:
         pickle.dump(word_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+

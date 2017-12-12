@@ -1,0 +1,145 @@
+import time
+from tools import *
+from Apply.utils import *
+from blocking.block import *
+
+ANCHOR_THRESHOLD_VALUE = 0.9
+
+KB = load_kb_us()
+
+# print("build vocab:")
+print('reload vocab:')
+vocab = load_dict(sys.path[1]+'/uc_complete_dict.pickle')
+pos_vocab = load_dict(sys.path[1]+'/pos.pickle')
+print('load vocab over!')
+
+# checkpoint_dir = '/home/himon/PycharmProjects/paper_work1/usedCars/runs/1495079056/checkpoints'
+checkpoint_dir = '/home/himon/PycharmProjects/paper_work_tidy/runs/1512918380/checkpoints'
+
+max_length = 27
+
+
+# ==================================================
+checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
+
+graph = tf.Graph()
+with graph.as_default():
+    session_conf = tf.ConfigProto(
+        device_count={"CPU": 4},
+        inter_op_parallelism_threads=1,
+        intra_op_parallelism_threads=1,
+        allow_soft_placement=True,
+        log_device_placement=False)
+    sess = tf.Session(config=session_conf)
+
+    with sess.as_default():
+        with tf.device('/gpu:0'):
+            # Load the saved meta graph and restore variables
+            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+            saver.restore(sess, checkpoint_file)
+            sess.run(tf.all_variables())
+
+            # Get the placeholders from the graph by name
+            input_x = graph.get_operation_by_name("input_x").outputs[0]
+            input_pos = graph.get_operation_by_name("input_pos").outputs[0]
+            dropout_keep_prob = graph.get_operation_by_name("dropout_keep_prob").outputs[0]
+            # Tensors we want to evaluate
+            loss = graph.get_operation_by_name("output/scores").outputs[0]
+            cnn_predictions = graph.get_operation_by_name("output/predictions").outputs[0]
+
+            print('Reading data:')
+            # for line in lines:
+            line = '2016 Mazda 3 Sedan Touring,$29335,BN Series Touring Sedan 4dr SKYACTIV-Drive 6sp 2.0i [May],0,Soul Red,6 speed Automatic,4 doors 5 seats Sedan,4 cylinder Petrol - Unleaded ULP Aspirated AspiratedL,5.7 (L/100km)'
+            line2 ='2017 Subaru,$25190,G5 2.0i Hatchback 5dr CVT 7sp AWD [MY17],0.0,Crystal White,7 speed Automatic,5 doors 5 seats Hatch,4 cylinder Petrol - Unleaded ULP Aspirated AspiratedL,6.6 (L/100km)'
+            line3 = '2015 Ford,$16490,WZ Ambiente Hatchback 5dr PwrShift 6sp 1.5i [MY15],6000.0,Candy Red,6 speed Automatic,5 doors 5 seats Hatch,4 cylinder Petrol - Unleaded ULP Aspirated AspiratedL,5.8 (L/100km)'
+            line4 = '2015 Audi,$48999,8V Cabriolet 2dr S tronic 7sp 1.4T (CoD) [MY17],4200,Mythos Black,7 speed Automatic,2 doors 4 seats Convertible,4 cylinder Petrol - Premium ULP Turbo Intercooled Turbo IntercooledL,5.1 (L/100km)'
+            blocks, anchors = doBlock5(line4, KB, USED_CAR_DICT, threshold=ANCHOR_THRESHOLD_VALUE)
+            print("block: \n", blocks)
+            print("anchor: \n", anchors)
+            re_blocks, re_anchors = re_block(blocks, anchors)
+            print("re_block:", re_blocks)
+            print("re_anchor:\n", re_anchors)
+
+            if len_Unknown2(re_anchors, USED_CAR_DICT) and len(re_anchors) >= len(USED_CAR_DICT):
+                temp_list = []
+                for r in do_blocking2(re_blocks, re_anchors, len(USED_CAR_DICT), USED_CAR_DICT):
+                    print('result:', r)
+                    print('---------------------------')
+                    # print(r[0])
+                    # 用sample_pretreatment_disperse_number2处理一下: '105-107' ==> '1 0 5 - 1 0 7'
+                    x_raw = [sample_pretreatment_disperse_number2(x).strip() for x in r[0]]
+                    input_list = [x.split() for x in x_raw]
+                    # print(input_list)
+                    # y_test = r[1]
+                    # print(x_raw)
+                    # print(y_test)
+                    end0 = time.time()
+
+                    # build input_x padding
+                    input_samples = map_word2index(input_list, vocab)
+                    input_padding_samples = makePaddedList2(max_length, input_samples, 0)
+                    # build pos padding
+                    raw_Pad = makePosFeatures(input_list)
+                    input_Pos = map_word2index(raw_Pad, pos_vocab)
+                    input_padding_Pos = makePaddedList2(max_length, input_Pos, 0)
+                    # print(input_padding_samples)
+                    # print(input_padding_Pos)
+
+                    feed_dict = {
+                        input_x: input_padding_samples,
+                        input_pos: input_padding_Pos,
+                        dropout_keep_prob: 1.0,     # set 0.5 at train step
+                    }
+                    loss = sess.run(loss, feed_dict=feed_dict)
+                    # print("loss:", loss)
+                    softmax_loss = sess.run(tf.nn.softmax(loss))
+                    print("softmax loss:", softmax_loss)
+
+                    cnn_predictions = sess.run(cnn_predictions, feed_dict=feed_dict)
+                    print("predictions:", cnn_predictions)
+                    loss_max = tf.reduce_max(softmax_loss, reduction_indices=1)
+                    print('loss_max:', sess.run(loss_max))
+                    score = tf.reduce_sum(loss_max)
+                    print('score:', sess.run(score))
+
+                    g_predictions, g_loss_max = greddy_predictions(softmax_loss, np.arange(len(softmax_loss[0])))
+                    print('g_prediction:', g_predictions)
+                    print('g_loss_max:', g_loss_max)
+                    g_score = sess.run(tf.reduce_sum(g_loss_max))
+                    print('g_score:', g_score)
+
+                    end1 = time.time()
+                    print('time consuming:', str(end1 - end0))
+
+                    temp_list.append([(r[0], r[1], g_predictions), g_score])
+
+                    # Initialize loss and cnn_predictions again in this for loop
+                    loss = graph.get_operation_by_name("output/scores").outputs[0]
+                    # softmax_loss = graph.get_operation_by_name("output/soft_score").outputs[0]
+                    cnn_predictions = graph.get_operation_by_name("output/predictions").outputs[0]
+                print('max score result:')
+                # print(temp_list)
+                result = max_tensor_score(temp_list, sess)
+                # pre = [str(x) for x in result[2]]
+                print(result)
+                print(result[0])    # blocks
+                print(result[1])    # labels
+                print(result[2])    # predictions
+
+                print(' || '.join(result[0]) + '\n')
+                print('[' + ', '.join(result[1]) + ']' + '\n')
+                print('[' + ', '.join(result[2]) + ']' + '\n')
+                print('\n')
+
+            else:
+                print(' || '.join(re_blocks) + '\n')
+                print('[' + ', '.join(re_anchors) + ']' + '\n')
+                dict_label = lambda x: USED_CAR_DICT.get(x)
+                dict_labels = [dict_label(an) for an in re_anchors]
+                print(re_blocks)
+                print(re_anchors)
+                print(dict_labels)
+
+            print("###############################################")
+
+
