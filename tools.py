@@ -7,6 +7,7 @@ USED_CAR_DICT = {'Brand': 0, 'Price': 1, 'Vehicle': 2, 'Odometer': 3, 'Color': 4
 label = ['Vehicle', 'Price', 'Odometer', 'Colour', 'Transmission', 'Body', 'Engine', 'Fuel Enconomy']
 
 
+
 def remove_black_space(a):
     c = []
     for i in a:
