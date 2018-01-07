@@ -6,6 +6,7 @@ import pandas as pd
 from tools import *
 import os
 
+#不同数据集不同的names
 names = ['Brand', 'Price', 'Vehicle', 'Odometer', 'Colour', 'Transmission', 'Body', 'Engine', 'Fuel Enconomy']
 
 df = pd.read_csv('data/train_data_split_brand.txt', names=names, header=None).dropna()

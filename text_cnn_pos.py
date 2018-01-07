@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-
+# 构造CNN模型
 class TextCNN_POS(object):
     def __init__(self, vocab_size, embedding_dim, pos_vocab_size, pos_emb_dim, sequence_length, num_classes, filter_sizes,
                  num_filters, l2_reg_lambda=0.0):

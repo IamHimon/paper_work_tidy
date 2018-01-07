@@ -2,7 +2,7 @@ import re
 import nltk
 import pickle
 import numpy as np
-LABEL_DICT = {'Title': 0, 'Author': 1, 'Journal': 2, 'Year': 3, 'Volume': 4, 'Pages': 5}
+#标签与词典
 USED_CAR_DICT = {'Brand': 0, 'Price': 1, 'Vehicle': 2, 'Odometer': 3, 'Color': 4, 'Transmission': 5, 'Body': 6, 'Engine': 7, 'Fuel_enconomy': 8}
 label = ['Vehicle', 'Price', 'Odometer', 'Colour', 'Transmission', 'Body', 'Engine', 'Fuel Enconomy']
 

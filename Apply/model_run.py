@@ -2,13 +2,15 @@ import tensorflow as tf
 
 from Apply.utils import len_Unknown2, greddy_predictions, max_tensor_score
 from blocking.block import *
-from Apply.model2_tool import *
+from Apply.greedy_implement import *
 
 
 ANCHOR_THRESHOLD_VALUE = 1
 
+# 加载知识库
 KB = load_kb_us()
 
+#加载词典
 # print("build vocab:")
 print('reload vocab:')
 vocab = load_dict(sys.path[1]+'/uc_complete_dict.pickle')
@@ -36,6 +38,7 @@ with graph.as_default():
         with tf.device('/gpu:0'):
             # Load the saved meta graph and restore variables
             saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+            #加载CNN模型
             saver.restore(sess, checkpoint_file)
             sess.run(tf.all_variables())
 
